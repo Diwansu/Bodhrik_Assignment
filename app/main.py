@@ -1,9 +1,10 @@
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import logging
 
-from app.database import engine, Base
-from app.routes import auth, sessions, evaluations
+from app.config import settings
+from app.database import Base, engine
+from app.routes import auth, evaluations, sessions
 
 # Setup logging
 logging.basicConfig(
@@ -12,13 +13,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize database tables on startup
-# Note: For production, we should use Alembic migrations instead of create_all
-try:
-    Base.metadata.create_all(bind=engine)
-    logger.info("Successfully created database tables (if not already existing).")
-except Exception as e:
-    logger.exception(f"Error initializing database tables: {e}")
+# Initialize database schema via metadata creation for local/dev environments.
+# For production, this should be replaced with Alembic migrations.
+if settings.ENVIRONMENT != "production":
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Successfully created database tables (if not already existing).")
+    except Exception as e:
+        logger.exception(f"Error initializing database tables: {e}")
 
 # Initialize FastAPI App
 app = FastAPI(
@@ -30,7 +32,7 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust for production
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -5,15 +5,15 @@ services:
     image: postgres:15-alpine
     container_name: bodhrik_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: bodhrik
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-bodhrik}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d bodhrik"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-bodhrik}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -37,8 +37,14 @@ services:
     restart: always
     ports:
       - "8000:8000"
-    env_file:
-      - .env
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/bodhrik}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      SECRET_KEY: ${SECRET_KEY:-supersecretjwtkeychangeinproduction12345!@#}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8000}
     depends_on:
       db:
         condition: service_healthy
@@ -46,15 +52,20 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-    # Override CMD to run uvicorn with reload for development
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   worker:
     build: .
     container_name: bodhrik_worker
     restart: always
-    env_file:
-      - .env
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/bodhrik}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      SECRET_KEY: ${SECRET_KEY:-supersecretjwtkeychangeinproduction12345!@#}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8000}
     depends_on:
       db:
         condition: service_healthy
