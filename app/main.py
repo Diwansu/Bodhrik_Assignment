@@ -24,7 +24,7 @@ except Exception as e:
 app = FastAPI(
     title="Bodhrik Core API",
     description="Backend service modeling users, sessions, evaluations, RBAC, and caching.",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # CORS configuration
@@ -41,11 +41,12 @@ app.include_router(auth.router)
 app.include_router(sessions.router)
 app.include_router(evaluations.router)
 
+
 @app.get("/")
 def root():
     return {
         "app": "Bodhrik API",
         "version": "1.0.0",
         "docs_url": "/docs",
-        "status": "healthy"
+        "status": "healthy",
     }
